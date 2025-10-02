@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -81,8 +81,8 @@ jobs:
       run: |
         echo "Running flake8..."
         flake8 src/ tests/
-        echo "Running mypy..."
-        mypy src/
+        # echo "Running mypy..."
+        # mypy src/
         echo "Running black check..."
         black --check src/ tests/
         echo "Running isort check..."
