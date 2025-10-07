@@ -1,0 +1,69 @@
+/* Overall app layout */
+TabbedContent {
+  height: 1fr;           /* fill space between header & footer */
+}
+
+TabPane {
+    padding: 1;
+}
+
+#editor-view {
+    width: 100%;
+    height: 1fr;
+    align: center top;
+    overflow: auto;
+}
+
+/* Editor column (title + textarea + status) */
+#editor-wrapper {
+    width: auto;              /* shrink to contents (Textual will min-fit) */
+    max-width: 90;            /* safety cap if terminal is tiny */
+    height: 1fr;
+    margin: 1;           /* horizontal centering */
+    padding: 0 1;             /* a little breathing room */
+}
+
+#editor-textarea {
+    width: 88;                /* content width (characters) */
+    max-width: 88;
+    min-width: 88;
+    height: 1fr;
+    border: solid $surface-lighten-2;
+    background: $surface-darken-1;
+}
+
+/* Line numbers dimmed */
+TextArea .text-area--line-number {
+    color: $text-muted;
+    text-style: dim;
+}
+
+.screen-title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+    color: $primary;
+}
+
+#editor-status {
+    dock: bottom;
+    height: auto;
+    color: $text-muted;
+    padding: 0 1;
+}
+
+/* Path prompt modal */
+#path-modal {
+  width: 68;
+  padding: 1 2;
+  border: round $accent;
+  background: $panel;
+  layout: vertical;
+  align: center middle;
+}
+#path-title { text-align: center; }
+#path-input { width: 64; }
+#path-buttons {
+  width: 64;
+  align: right middle;
+}

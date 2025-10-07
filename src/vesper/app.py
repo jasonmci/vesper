@@ -40,6 +40,8 @@ def _ensure_project_skeleton(root: Path) -> None:
 
 
 class VesperApp(App):
+    CSS_PATH = "styles.tcss"
+
     BINDINGS = [
         Binding("ctrl+n", "new_file", "New"),
         Binding("ctrl+o", "open_file", "Open"),
@@ -48,59 +50,6 @@ class VesperApp(App):
         Binding("ctrl+shift+p", "set_project", "Set Project"),
         Binding("ctrl+shift+n", "new_project_file", "New File in Project"),
     ]
-
-    # Inline CSS (could be moved to external .tcss later)
-    CSS = """
-    TabbedContent { height: 1fr; }
-    TabPane { padding: 1; }
-
-    /* Center the editor column */
-    #editor-view {
-        width: 100%;
-        height: 1fr;
-        align: center top;
-        overflow: auto;
-    }
-
-    /* Wrapper inside editor for constraining width */
-    #editor-wrapper {
-        width: auto;              /* shrink to contents (Textual will min-fit) */
-        max-width: 90;            /* safety cap if terminal is tiny */
-        height: 1fr;
-        margin: 1;           /* horizontal centering */
-        padding: 0 1;             /* a little breathing room */
-    }
-
-    /* The actual text area width: 88 chars target + gutter for line numbers */
-    #editor-textarea {
-        width: 88;                /* content width (characters) */
-        max-width: 88;
-        min-width: 88;
-        height: 1fr;
-        border: solid $surface-lighten-2;
-        background: $surface-darken-1;
-    }
-
-    /* Line numbers dimmed */
-    TextArea .text-area--line-number {
-        color: $text-muted;
-        text-style: dim;
-    }
-
-    .screen-title {
-        text-align: center;
-        text-style: bold;
-        margin-bottom: 1;
-        color: $primary;
-    }
-
-    #editor-status {
-        dock: bottom;
-        height: auto;
-        color: $text-muted;
-        padding: 0 1;
-    }
-    """
 
     def _resolve_path(self, path_str: str) -> Path:
         p = Path(path_str).expanduser()
