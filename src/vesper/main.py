@@ -8,6 +8,12 @@ import click
 from vesper.app import VesperApp
 
 
+class VesperCLIApp(VesperApp):
+    # Attributes configured before run()
+    initial_file: str | None = None
+    initial_mode: str = "editor"
+
+
 @click.command()
 @click.option(
     "--file", "-f", type=click.Path(exists=False), help="File to open on startup"
@@ -24,8 +30,8 @@ def main(file: str | None = None, mode: str = "editor") -> None:
     """Vesper - Terminal-based text editor, outliner, and task tracker."""
     app = VesperApp()
 
-    if file:
-        app.initial_file = file
+    app = VesperCLIApp()
+    app.initial_file = file
 
     app.initial_mode = mode
     app.run()

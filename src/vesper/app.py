@@ -1,6 +1,7 @@
 # src/vesper/app.py
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -14,6 +15,29 @@ from vesper.screens.tasks import TasksView
 
 from .screens import PathPrompt
 
+SETTINGS_DIR = Path.home() / ".vesper"
+SETTINGS_FILE = SETTINGS_DIR / "settings.json"
+
+
+def _load_settings() -> dict:
+    try:
+        return json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_settings(data: dict) -> None:
+    SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
+    SETTINGS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def _ensure_project_skeleton(root: Path) -> None:
+    # Create a simple structure you can grow later
+    for sub in ("chapters", "notes", "characters", "research"):
+        (root / sub).mkdir(parents=True, exist_ok=True)
+    # Optional README so the folder isn’t empty in git:
+    (root / "README.md").touch(exist_ok=True)
+
 
 class VesperApp(App):
     BINDINGS = [
@@ -21,6 +45,8 @@ class VesperApp(App):
         Binding("ctrl+o", "open_file", "Open"),
         Binding("ctrl+s", "save_file", "Save"),
         Binding("ctrl+shift+s", "save_file_as", "Save As"),
+        Binding("ctrl+shift+p", "set_project", "Set Project"),
+        Binding("ctrl+shift+n", "new_project_file", "New File in Project"),
     ]
 
     # Inline CSS (could be moved to external .tcss later)
@@ -76,6 +102,12 @@ class VesperApp(App):
     }
     """
 
+    def _resolve_path(self, path_str: str) -> Path:
+        p = Path(path_str).expanduser()
+        if not p.is_absolute() and self.project_root:
+            p = self.project_root / p
+        return p
+
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with TabbedContent(initial="editor"):
@@ -96,11 +128,45 @@ class VesperApp(App):
         )
         self._autosave_inflight = False
 
+        self.project_root: Path | None = None
+
+        settings = _load_settings()
+        last = settings.get("last_project")
+        if last:
+            p = Path(last).expanduser()
+            if p.is_dir():
+                self.project_root = p
+                self.sub_title = f"Project: {p}"
+
     # Helper to grab the editor widget
     def editor(self) -> EditorView:
         return self.query_one("#editor-view", EditorView)
 
     # ---------------- Actions (sync) ----------------
+
+    def action_set_project(self) -> None:
+        self.run_worker(self._set_project_worker())
+
+    async def _set_project_worker(self) -> None:
+        default = str(self.project_root) if self.project_root else ""
+        # Reuse PathPrompt for a folder path
+        root_str = await self.push_screen_wait(
+            PathPrompt("Select project folder…", "Enter folder path", default)
+        )
+        if not root_str:
+            return
+        root = Path(root_str).expanduser()
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            _ensure_project_skeleton(root)
+            self.project_root = root
+            self.sub_title = f"Project: {root}"
+            s = _load_settings()
+            s["last_project"] = str(root)
+            _save_settings(s)
+            self.notify(f"Project set to {root}")
+        except Exception as e:
+            self.notify(f"Set Project failed: {e}", severity="error")
 
     def action_new_file(self) -> None:
         self.editor().new_file()
@@ -147,29 +213,73 @@ class VesperApp(App):
     # ---------------- Workers (async) ----------------
 
     async def _open_file_worker(self) -> None:
-        default = str(self.editor().current_path) if self.editor().current_path else ""
+        # default directory
+        if self.editor().current_path:
+            default = str(self.editor().current_path)
+        elif self.project_root:
+            default = str(self.project_root / "chapters")
+        else:
+            default = ""
         path = await self.push_screen_wait(
             PathPrompt("Open file…", "Enter path to open", default)
         )
         if not path:
             return
         try:
-            self.editor().load_file(path)
+            self.editor().load_file(self._resolve_path(path))
             self.notify(f"Opened {path}")
         except Exception as e:
             self.notify(f"Open failed: {e}", severity="error")
 
     async def _save_file_as_worker(self) -> None:
-        default = str(self.editor().current_path) if self.editor().current_path else ""
+        # default filename suggestion
+        if self.editor().current_path:
+            default = str(self.editor().current_path)
+        elif self.project_root:
+            default = str(self.project_root / "chapters/untitled.md")
+        else:
+            default = "untitled.md"
+
         path = await self.push_screen_wait(
             PathPrompt("Save file as…", "Enter path to save", default)
         )
         if not path:
             return
         try:
-            p = Path(path).expanduser()
+            p = self._resolve_path(path)
+            # add .md if you forgot an extension
+            if p.suffix == "":
+                p = p.with_suffix(".md")
             p.parent.mkdir(parents=True, exist_ok=True)
             self.editor().save_file(p)
             self.notify(f"Saved to {p}")
         except Exception as e:
             self.notify(f"Save As failed: {e}", severity="error")
+
+    def action_new_project_file(self) -> None:
+        self.run_worker(self._new_project_file_worker())
+
+    async def _new_project_file_worker(self) -> None:
+        base = self.project_root / "chapters" if self.project_root else Path(".")
+        default = str(base / "untitled.md")
+        path = await self.push_screen_wait(
+            PathPrompt(
+                "New file in project…",
+                "Enter relative or absolute path",
+                default,
+            )
+        )
+        if not path:
+            return
+        p = self._resolve_path(path)
+        if p.suffix == "":
+            p = p.with_suffix(".md")
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.touch(exist_ok=True)
+            self.editor().new_file()
+            self.editor().current_path = p
+            self.editor().save_file(p)  # create on disk immediately
+            self.notify(f"Created {p}")
+        except Exception as e:
+            self.notify(f"New file failed: {e}", severity="error")
