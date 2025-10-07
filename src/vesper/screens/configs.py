@@ -6,7 +6,7 @@ from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.widgets import ProgressBar, Sparkline, Static
 
 
-class StatsView(Container):
+class ConfigView(Container):
     """Stats dashboard screen component."""
 
     def compose(self):

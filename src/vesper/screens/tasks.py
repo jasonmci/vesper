@@ -2,12 +2,11 @@
 Tasks screen for task management and tracking.
 """
 
-from textual.containers import Horizontal, Vertical
-from textual.widget import Widget
+from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Button, DataTable, Input, Static
 
 
-class TasksScreen(Widget):
+class TasksView(Container):
     """Tasks screen component."""
 
     def compose(self):

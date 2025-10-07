@@ -2,12 +2,11 @@
 Outliner screen for hierarchical document organization.
 """
 
-from textual.containers import Horizontal, Vertical
-from textual.widget import Widget
+from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Static, TextArea, Tree
 
 
-class OutlinerScreen(Widget):
+class OutlinerView(Container):
     """Outliner screen component."""
 
     def compose(self):

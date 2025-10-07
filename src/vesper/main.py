@@ -10,15 +10,12 @@ from vesper.app import VesperApp
 
 @click.command()
 @click.option(
-    "--file",
-    "-f",
-    type=click.Path(exists=False),
-    help="File to open on startup",
+    "--file", "-f", type=click.Path(exists=False), help="File to open on startup"
 )
 @click.option(
     "--mode",
     "-m",
-    type=click.Choice(["editor", "outliner", "tasks", "stats"]),
+    type=click.Choice(["editor", "outliner", "tasks"]),
     default="editor",
     help="Starting mode",
 )

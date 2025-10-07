@@ -1,140 +1,175 @@
-"""Main Vesper application using Textual."""
+# src/vesper/app.py
+from __future__ import annotations
+
+from pathlib import Path
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.widgets import Footer, Header, TabbedContent, TabPane
 
-from vesper.screens.editor import EditorScreen
-from vesper.screens.outliner import OutlinerScreen
-from vesper.screens.stats import StatsScreen
-from vesper.screens.tasks import TasksScreen
+from vesper.screens.editor import EditorView
+from vesper.screens.outliner import OutlinerView
+from vesper.screens.stats import StatsView
+from vesper.screens.tasks import TasksView
+
+from .screens import PathPrompt
 
 
 class VesperApp(App):
-    """Main Vesper application."""
+    BINDINGS = [
+        Binding("ctrl+n", "new_file", "New"),
+        Binding("ctrl+o", "open_file", "Open"),
+        Binding("ctrl+s", "save_file", "Save"),
+        Binding("ctrl+shift+s", "save_file_as", "Save As"),
+    ]
 
+    # Inline CSS (could be moved to external .tcss later)
     CSS = """
-    TabbedContent {
+    TabbedContent { height: 1fr; }
+    TabPane { padding: 1; }
+
+    /* Center the editor column */
+    #editor-view {
+        width: 100%;
         height: 1fr;
+        align: center top;
+        overflow: auto;
     }
 
-    TabPane {
-        padding: 1;
+    /* Wrapper inside editor for constraining width */
+    #editor-wrapper {
+        width: auto;              /* shrink to contents (Textual will min-fit) */
+        max-width: 90;            /* safety cap if terminal is tiny */
+        height: 1fr;
+        margin: 1;           /* horizontal centering */
+        padding: 0 1;             /* a little breathing room */
     }
 
-    /* Stats screen styling */
-    .stats-cards {
-        height: auto;
-        margin-bottom: 1;
+    /* The actual text area width: 88 chars target + gutter for line numbers */
+    #editor-textarea {
+        width: 88;                /* content width (characters) */
+        max-width: 88;
+        min-width: 88;
+        height: 1fr;
+        border: solid $surface-lighten-2;
+        background: $surface-darken-1;
     }
 
-    .stat-card {
-        border: solid $primary;
-        padding: 1;
-        margin: 0 1;
-        width: 1fr;
-        height: auto;
-    }
-
-    .card-title {
+    /* Line numbers dimmed */
+    TextArea .text-area--line-number {
         color: $text-muted;
-        text-style: bold;
+        text-style: dim;
     }
 
-    .card-value {
-        text-style: bold;
-        color: $primary;
+    .screen-title {
         text-align: center;
-    }
-
-    .card-trend {
-        color: $success;
-        text-align: center;
-    }
-
-    .stats-grid {
-        grid-size: 2 1;
-        grid-gutter: 1 1;
-        height: auto;
-        margin-bottom: 1;
-    }
-
-    .section-title {
         text-style: bold;
-        color: $primary;
         margin-bottom: 1;
+        color: $primary;
     }
 
-    .progress-section, .activity-section {
-        border: solid $surface-lighten-1;
-        padding: 1;
-    }
-
-    .recent-activity {
-        border: solid $surface-lighten-1;
-        padding: 1;
+    #editor-status {
+        dock: bottom;
         height: auto;
-    }
-
-    .activity-list {
-        margin-top: 1;
+        color: $text-muted;
+        padding: 0 1;
     }
     """
 
-    BINDINGS = [
-        ("ctrl+q", "quit", "Quit"),
-        ("ctrl+n", "new_file", "New"),
-        ("ctrl+o", "open_file", "Open"),
-        ("ctrl+s", "save_file", "Save"),
-        ("f1", "show_help", "Help"),
-    ]
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.initial_file: str | None = None
-        self.initial_mode: str = "editor"
-
     def compose(self) -> ComposeResult:
-        """Compose the main application layout."""
         yield Header(show_clock=True)
-
         with TabbedContent(initial="editor"):
             with TabPane("Editor", id="editor"):
-                yield EditorScreen()
+                yield EditorView(id="editor-view")
             with TabPane("Outliner", id="outliner"):
-                yield OutlinerScreen()
+                yield OutlinerView()
             with TabPane("Tasks", id="tasks"):
-                yield TasksScreen()
+                yield TasksView()
             with TabPane("Stats", id="stats"):
-                yield StatsScreen()
-
-        yield Footer()
+                yield StatsView()
+        yield Footer(show_command_palette=True)
 
     def on_mount(self) -> None:
-        """Handle application mount."""
-        self.title = "Vesper"
-        self.sub_title = "Text Editor • Outliner • Task Tracker • Dashboard"
+        # fire every 15s; keep a handle if you ever want to pause/cancel
+        self._autosave_timer = self.set_interval(
+            15, self._autosave_tick, name="autosave"
+        )
+        self._autosave_inflight = False
+
+    # Helper to grab the editor widget
+    def editor(self) -> EditorView:
+        return self.query_one("#editor-view", EditorView)
+
+    # ---------------- Actions (sync) ----------------
 
     def action_new_file(self) -> None:
-        """Create a new file."""
-        # TODO: Implement new file functionality
-        pass
+        self.editor().new_file()
 
     def action_open_file(self) -> None:
-        """Open a file."""
-        # TODO: Implement file opening functionality
-        pass
+        # Kick off a worker that awaits the modal and then loads the file
+        self.run_worker(self._open_file_worker())
 
     def action_save_file(self) -> None:
-        """Save the current file."""
-        # TODO: Implement file saving functionality
-        pass
+        try:
+            self.editor().save_file()  # uses current_path; raises if None
+            self.notify("Saved")
+        except FileNotFoundError:
+            # No current path → fall back to Save As via worker
+            self.run_worker(self._save_file_as_worker())
+        except Exception as e:
+            self.notify(f"Save failed: {e}", severity="error")
 
-    def action_show_help(self) -> None:
-        """Show help information."""
-        # TODO: Implement help screen
-        pass
+    def action_save_file_as(self) -> None:
+        # Start a worker that awaits the modal and saves to the chosen path
+        self.run_worker(self._save_file_as_worker())
 
+    def _autosave_tick(self) -> None:
+        # Skip if a previous autosave is still running
+        if self._autosave_inflight:
+            return
+        self._autosave_inflight = True
+        self.run_worker(self._autosave_worker(), name="autosave")
 
-if __name__ == "__main__":
-    app = VesperApp()
-    app.run()
+    async def _autosave_worker(self) -> None:
+        try:
+            ed = self.editor()
+            # Only autosave when there are changes AND we know where to save
+            if getattr(ed, "dirty", False) and getattr(ed, "current_path", None):
+                try:
+                    ed.save_file(mark_clean=False)  # don’t clear the “dirty” dot
+                    # optional: subtle feedback (avoid spamming notifications)
+                    # self.sub_title = f"Auto-saved"
+                except Exception as e:
+                    self.notify(f"Auto-save failed: {e}", severity="warning")
+        finally:
+            self._autosave_inflight = False
+
+    # ---------------- Workers (async) ----------------
+
+    async def _open_file_worker(self) -> None:
+        default = str(self.editor().current_path) if self.editor().current_path else ""
+        path = await self.push_screen_wait(
+            PathPrompt("Open file…", "Enter path to open", default)
+        )
+        if not path:
+            return
+        try:
+            self.editor().load_file(path)
+            self.notify(f"Opened {path}")
+        except Exception as e:
+            self.notify(f"Open failed: {e}", severity="error")
+
+    async def _save_file_as_worker(self) -> None:
+        default = str(self.editor().current_path) if self.editor().current_path else ""
+        path = await self.push_screen_wait(
+            PathPrompt("Save file as…", "Enter path to save", default)
+        )
+        if not path:
+            return
+        try:
+            p = Path(path).expanduser()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            self.editor().save_file(p)
+            self.notify(f"Saved to {p}")
+        except Exception as e:
+            self.notify(f"Save As failed: {e}", severity="error")
