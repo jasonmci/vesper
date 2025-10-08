@@ -72,3 +72,21 @@ TextArea .text-area--line-number {
 #outliner-wrapper { height: 1fr; layout: vertical; }
 #outline-tree { height: 1fr; }
 #outliner-help { height: 1; color: $text-muted; text-align: center; }
+
+#outliner-split { height: 1fr; layout: horizontal; }
+#outliner-wrapper { width: 1fr; height: 1fr; layout: vertical; }
+#outline-tree { height: 1fr; }
+#outline-grid { width: 2fr; height: 1fr; }
+#outliner-help { height: 1; color: $text-muted; text-align: center; }
+#milestone-modal {
+  width: 72;
+  padding: 1 2;
+  border: round $accent;
+  background: $panel;
+  layout: vertical;
+  align: center middle;
+
+}
+#milestone-title { text-align: center; }
+#milestone-fields { width: 68; layout: vertical; }
+#milestone-buttons { width: 68; align: right middle; }
