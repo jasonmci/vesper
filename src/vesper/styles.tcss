@@ -67,3 +67,8 @@ TextArea .text-area--line-number {
   width: 64;
   align: right middle;
 }
+
+
+#outliner-wrapper { height: 1fr; layout: vertical; }
+#outline-tree { height: 1fr; }
+#outliner-help { height: 1; color: $text-muted; text-align: center; }

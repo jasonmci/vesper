@@ -88,6 +88,7 @@ class VesperApp(App):
                 self.sub_title = f"Project: {p}"
 
     # Helper to grab the editor widget
+
     def editor(self) -> EditorView:
         return self.query_one("#editor-view", EditorView)
 
@@ -116,6 +117,11 @@ class VesperApp(App):
             self.notify(f"Project set to {root}")
         except Exception as e:
             self.notify(f"Set Project failed: {e}", severity="error")
+        try:
+            # tell Outliner to reload from the chosen project folder
+            self.query_one(OutlinerView).reload_outline_from_disk()
+        except Exception:
+            pass
 
     def action_new_file(self) -> None:
         self.editor().new_file()
