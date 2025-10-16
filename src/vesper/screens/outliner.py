@@ -15,6 +15,7 @@ from textual.widgets.tree import TreeNode
 from . import MilestonePrompt, PathPrompt  # reuse your small input modal
 
 SETTINGS_FILE = Path.home() / ".vesper" / "settings.json"
+GRID_COL_WIDTHS = (36, 36, 36, 36)  # Plot, Subplot, Character, Theme
 
 
 def _last_project_from_settings() -> Optional[Path]:
@@ -24,6 +25,13 @@ def _last_project_from_settings() -> Optional[Path]:
         return p if p.is_dir() else None
     except Exception:
         return None
+
+
+def _preview(text: str, max_chars: int) -> str:
+    if not text:
+        return ""
+    t = text.replace("\n", " ").strip()
+    return t if len(t) <= max_chars else t[: max(0, max_chars - 1)] + "…"
 
 
 # ---- Data model ------------------------------------------------------------
@@ -76,11 +84,11 @@ class OutlinerView(Container):
         Binding("b", "collapse_all", "Collapse All"),
         Binding("shift+e", "collapse_all", "Collapse All"),
         Binding("r", "rename", "Rename"),  # easier access than Enter
+        Binding("m", "edit_milestone", "Edit Milestone"),
     ]
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="outliner-split"):
-            # Left: tree
             with Vertical(id="outliner-wrapper"):
                 yield Static("Outliner", classes="screen-title")
                 tree: Tree[OutlineItem] = Tree("ROOT", id="outline-tree")
@@ -94,13 +102,55 @@ class OutlinerView(Container):
                     ),
                     id="outliner-help",
                 )
-            # Right: grid
-            self._grid = DataTable(id="outline-grid")
-            self._grid.add_columns("Plot", "Subplot", "Character", "Theme")
-            self._grid.cursor_type = "row"
-            yield self._grid
+
+            with Vertical(id="grid-wrapper"):
+                yield Static("", id="grid-spacer-top")
+
+                self._grid = DataTable(id="outline-grid")
+                # Add columns ONCE; no widths here (avoids API differences)
+                self._grid.add_columns("Plot", "Subplot", "Character", "Theme")
+                self._grid.cursor_type = "row"
+                yield self._grid
+
+                yield Static("", id="grid-spacer-bottom")
 
     # ---- Lifecycle ---------------------------------------------------------
+    def action_edit_milestone(self) -> None:
+        self.app.run_worker(self._edit_milestone_worker())
+
+    async def _edit_milestone_worker(self) -> None:
+        pair = self._selected_node_and_item()
+        if pair is None:
+            return
+        node, data = pair
+        if data.kind != "milestone":
+            self.app.notify("Select a milestone to edit", severity="warning")
+            return
+
+        fields = await self.app.push_screen_wait(
+            MilestonePrompt(
+                "Edit milestone",
+                default_title=data.title,
+                default_plot=data.plot,
+                default_subplot=data.subplot,
+                default_character=data.character,
+                default_theme=data.theme,
+            )
+        )
+        if not fields:
+            return
+
+        # Update model + tree label
+        data.title = fields["title"] or data.title
+        data.plot = fields["plot"]
+        data.subplot = fields["subplot"]
+        data.character = fields["character"]
+        data.theme = fields["theme"]
+        node.set_label(self._node_label(data))
+
+        self._save_outline()
+        self._rebuild_grid()
+        self._reselect_by_id(data.id)
 
     def on_mount(self) -> None:
         items = self._load_outline() or self._seed_bme()
@@ -404,10 +454,8 @@ class OutlinerView(Container):
         )
 
     def _node_label(self, item: OutlineItem) -> str:
-        prefix = {"beat": "Beat", "chapter": "Chapter", "milestone": "•"}.get(
-            item.kind, ""
-        )
-        return f"{prefix} — {item.title}" if prefix else item.title
+        prefix = {"beat": "📗 ", "chapter": "📓 ", "milestone": "• "}.get(item.kind, "")
+        return f"{prefix}{item.title}" if prefix else item.title
 
     def _selected_node(self) -> Optional[TreeNode[OutlineItem]]:
         return self._tree.cursor_node
@@ -553,30 +601,34 @@ class OutlinerView(Container):
         return items
 
     def _rebuild_grid(self) -> None:
-        # Clear rows only, keep columns
-        cleared_cols = False
+        # Clear rows only; keep headers
         try:
-            # Newer Textual supports keyword flags
             self._grid.clear(columns=False)
         except TypeError:
-            # Older signature: clear() nukes everything
             self._grid.clear()
-            cleared_cols = True
+            if not getattr(self._grid, "columns", None):
+                self._grid.add_columns("Plot", "Subplot", "Character", "Theme")
 
-        if cleared_cols:
-            # Recreate the columns only if they were removed
-            self._grid.add_columns("Plot", "Subplot", "Character", "Theme")
-
-        # Rebuild rows
         self._grid_index: List[str] = []
+
+        # simple preview lengths (tweak if you want)
+        w_plot, w_subplot, w_char, w_theme = (
+            GRID_COL_WIDTHS if "GRID_COL_WIDTHS" in globals() else (36, 36, 36, 36)
+        )
+
         for item in self._flatten():
             self._grid_index.append(item.id)
             if item.kind == "milestone":
-                self._grid.add_row(item.plot, item.subplot, item.character, item.theme)
+                self._grid.add_row(
+                    _preview(item.plot, w_plot),
+                    _preview(item.subplot, w_subplot),
+                    _preview(item.character, w_char),
+                    _preview(item.theme, w_theme),
+                )
             else:
                 self._grid.add_row("", "", "", "")
 
-        # keep the grid scrolled near the selected node
+        # keep grid near the selected node
         node = self._selected_node()
         if node and node.data:
             self._grid_select_by_id(node.data.id)
@@ -586,15 +638,26 @@ class OutlinerView(Container):
             idx = self._grid_index.index(node_id)
         except ValueError:
             return
-        # Scroll to the row; highlight if API allows
         scroll_to_row = getattr(self._grid, "scroll_to_row", None)
         if callable(scroll_to_row):
             scroll_to_row(idx)
         try:
             from textual.coordinate import Coordinate
 
-            self._grid.cursor_coordinate = Coordinate(
-                idx, 0
-            )  # may be ignored on some versions
+            self._grid.cursor_coordinate = Coordinate(idx, 0)
         except Exception:
             pass
+
+    # Tree -> Grid
+    def on_tree_node_selected(self, event) -> None:
+        node = getattr(event, "node", None)
+        if node and node.data:
+            self._grid_select_by_id(node.data.id)
+
+    # Grid -> Tree
+    def on_data_table_row_highlighted(self, event) -> None:
+        idx = getattr(event, "row_index", getattr(event, "row", None))
+        if idx is None:
+            return
+        if 0 <= idx < len(getattr(self, "_grid_index", [])):
+            self._reselect_by_id(self._grid_index[idx])

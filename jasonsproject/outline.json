@@ -58,10 +58,41 @@
         "id": "d26dec54-4035-41f7-9f6c-f8ba3b8c07ed",
         "title": "New Chapter",
         "kind": "chapter",
-        "children": [],
+        "children": [
+          {
+            "id": "368bd2e7-cee5-40df-92cb-1500804b3a76",
+            "title": "efwr",
+            "kind": "milestone",
+            "children": [],
+            "plot": "d bkmr er[pgewpqnwr[pjvre f wewe r wefvwvwr wr wwv vwfv wv wv wev evw ewvwv wvwv wwveww\nw\nw",
+            "subplot": "rpevn epnwwp[wn2[wepm[2nv [32  g3w[jgertbrvw wvwe vweevnvpernwrpqncw[efvw[vw\nw\nw",
+            "character": "w\nw\nw\nw",
+            "theme": "ckfkfkffkfkfkfkfkfkfkf"
+          },
+          {
+            "id": "44de4834-cea1-4808-8cbd-3e0854b708b4",
+            "title": "Thank you for your",
+            "kind": "milestone",
+            "children": [],
+            "plot": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "subplot": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "character": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "theme": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing."
+          }
+        ],
         "plot": "",
         "subplot": "",
         "character": "",
+        "theme": ""
+      },
+      {
+        "id": "ac7d2971-56ce-4f5e-8224-d62a8a724c5f",
+        "title": "Car crash",
+        "kind": "milestone",
+        "children": [],
+        "plot": "\n\ndriver is not paying attention",
+        "subplot": "",
+        "character": "protagonist is in shock",
         "theme": ""
       }
     ],

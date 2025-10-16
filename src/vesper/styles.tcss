@@ -1,58 +1,98 @@
-/* Overall app layout */
+/* =========================
+   Global layout & basics
+   ========================= */
+Screen {
+  layout: vertical;
+}
+
 TabbedContent {
-  height: 1fr;           /* fill space between header & footer */
+  height: 1fr;                /* fill between header/footer */
 }
 
-TabPane {
-    padding: 1;
+.screen-title {
+  text-align: center;
+  text-style: bold;
+  margin-bottom: 1;
+  color: $primary;
 }
 
+/* =========================
+   Editor (Editor tab)
+   ========================= */
 #editor-view {
-    width: 100%;
-    height: 1fr;
-    align: center top;
-    overflow: auto;
+  height: 1fr;
+  align: center top;          /* centers fixed-width children horizontally */
 }
 
-/* Editor column (title + textarea + status) */
 #editor-wrapper {
-    width: auto;              /* shrink to contents (Textual will min-fit) */
-    max-width: 90;            /* safety cap if terminal is tiny */
-    height: 1fr;
-    margin: 1;           /* horizontal centering */
-    padding: 0 1;             /* a little breathing room */
+  width: 88;                  /* fixed 88-char column */
+  height: 1fr;
+  layout: vertical;
 }
+/* emulate vertical gap */
+#editor-wrapper > * { margin-bottom: 1; }
+#editor-wrapper > *:last-child { margin-bottom: 0; }
 
 #editor-textarea {
-    width: 88;                /* content width (characters) */
-    max-width: 88;
-    min-width: 88;
-    height: 1fr;
-    border: solid $surface-lighten-2;
-    background: $surface-darken-1;
+  width: 88;
+  height: 1fr;
+  border: solid $surface-lighten-2;
+  background: $surface-darken-1;
 }
 
 /* Line numbers dimmed */
 TextArea .text-area--line-number {
-    color: $text-muted;
-    text-style: dim;
-}
-
-.screen-title {
-    text-align: center;
-    text-style: bold;
-    margin-bottom: 1;
-    color: $primary;
+  color: $text-muted;
+  text-style: dim;
 }
 
 #editor-status {
-    dock: bottom;
-    height: auto;
-    color: $text-muted;
-    padding: 0 1;
+  height: 1;
+  text-align: center;
+  color: $text-muted;
+  padding: 0 1;
 }
 
-/* Path prompt modal */
+/* =========================
+   Outliner split view
+   ========================= */
+#outliner-split {
+  layout: horizontal;
+  height: 1fr;
+}
+
+/* Left panel: narrower tree */
+#outliner-wrapper {
+  width: 46;                  /* tweak 34–48 to taste */
+  height: 1fr;
+  layout: vertical;
+}
+/* emulate vertical gap */
+#outliner-wrapper > * { margin-bottom: 1; }
+#outliner-wrapper > *:last-child { margin-bottom: 0; }
+
+#outline-tree { height: 1fr; }
+#outliner-help {
+  height: 1;
+  color: $text-muted;
+  text-align: center;
+}
+
+/* Right panel: grid fills remaining space */
+#outline-grid {
+  width: 1fr;
+  height: 1fr;
+}
+
+/* clearer selection */
+#outline-grid .datatable--cursor { text-style: reverse; }
+
+/* multiline cells readability */
+#outline-grid .datatable--cell { padding: 0 1; }
+
+/* =========================
+   Path prompt modal
+   ========================= */
 #path-modal {
   width: 68;
   padding: 1 2;
@@ -61,6 +101,9 @@ TextArea .text-area--line-number {
   layout: vertical;
   align: center middle;
 }
+#path-modal > * { margin-bottom: 1; }
+#path-modal > *:last-child { margin-bottom: 0; }
+
 #path-title { text-align: center; }
 #path-input { width: 64; }
 #path-buttons {
@@ -68,25 +111,58 @@ TextArea .text-area--line-number {
   align: right middle;
 }
 
-
-#outliner-wrapper { height: 1fr; layout: vertical; }
-#outline-tree { height: 1fr; }
-#outliner-help { height: 1; color: $text-muted; text-align: center; }
-
-#outliner-split { height: 1fr; layout: horizontal; }
-#outliner-wrapper { width: 1fr; height: 1fr; layout: vertical; }
-#outline-tree { height: 1fr; }
-#outline-grid { width: 2fr; height: 1fr; }
-#outliner-help { height: 1; color: $text-muted; text-align: center; }
+/* =========================
+   Milestone modal (multiline)
+   ========================= */
 #milestone-modal {
-  width: 72;
+  width: 84;
+  height: 56;
   padding: 1 2;
   border: round $accent;
   background: $panel;
   layout: vertical;
   align: center middle;
-
 }
+
+#milestone-modal > * { margin-bottom: 1; }
+#milestone-modal > *:last-child { margin-bottom: 0; }
+
 #milestone-title { text-align: center; }
-#milestone-fields { width: 68; layout: vertical; }
-#milestone-buttons { width: 68; align: right middle; }
+
+#milestone-fields {
+  width: 68;
+  height: auto;       /* size to content; avoid nested scroll area */
+}
+#milestone-fields > * { margin-bottom: 1; }
+#milestone-fields > *:last-child { margin-bottom: 0; }
+
+#ms-title { width: 68; }
+
+
+#milestone-buttons {
+  width: 68;
+  align: left middle;
+}
+
+#outline-grid .datatable--cell { padding: 0 1; }
+#outline-grid .datatable--cursor { text-style: reverse; }
+
+#outline-grid { height: 1fr; }
+
+#grid-wrapper { height: 1fr; layout: vertical; }
+#grid-spacer-top { height: 1; }
+#grid-spacer-bottom { height: 1; }
+#outline-grid { height: 1fr; }
+
+/* Field labels in the milestone modal */
+/* Labels */
+.field-label {
+  text-style: bold;
+  color: $text-muted;
+}
+
+/* Exactly ~4 lines tall text areas (soft wrap will keep long lines visible) */
+#ms-plot, #ms-subplot, #ms-character, #ms-theme {
+  width: 68;
+  height: 6;          /* ~4 rows, accounting for widget padding */
+}
