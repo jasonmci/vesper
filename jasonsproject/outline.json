@@ -1,34 +1,185 @@
 [
   {
-<<<<<<< HEAD
-    "id": "ad49a405-97a0-4866-9106-fc46720e3575",
-    "title": "Rename this",
-    "kind": "beat",
-    "children": [
-      {
-        "id": "15b5eac3-dfa6-4db7-92c1-3b99b68b70c1",
-        "title": "New Milestone",
-        "kind": "milestone",
-        "children": []
-      },
-      {
-        "id": "2802c73c-82cd-4738-b045-1bc9df97ace8",
-        "title": "new child",
-        "kind": "chapter",
-        "children": []
-      }
-    ]
-  },
-  {
-    "id": "0a144387-8ae3-42ed-a392-16a54e506ff8",
-=======
-    "id": "845a48ae-51f0-4215-b210-ab12c40b2a13",
+    "id": "cf57a6ee-8b10-47b8-8582-09eea14fbe0b",
     "title": "Beginning",
     "kind": "beat",
     "children": [
       {
-        "id": "1c38d8e4-9a1a-4e44-94a0-68c02850a17d",
-        "title": "avwa",
+        "id": "722af854-fe16-4796-8156-41481377fb85",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "bb2252d0-ff2d-4fc3-8da8-42d9e657644f",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "d1a4f8b3-87f8-42b7-8536-f66551215da1",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "8d1512a5-e8da-4e72-8092-979e54ebe989",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "4930a750-867a-4150-acfb-a6ecbcefbc6e",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "d26dec54-4035-41f7-9f6c-f8ba3b8c07ed",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [
+          {
+            "id": "368bd2e7-cee5-40df-92cb-1500804b3a76",
+            "title": "efwr",
+            "kind": "milestone",
+            "children": [],
+            "plot": "d bkmr er[pgewpqnwr[pjvre f wewe r wefvwvwr wr wwv vwfv wv wv wev evw ewvwv wvwv wwveww\nw\nw",
+            "subplot": "rpevn epnwwp[wn2[wepm[2nv [32  g3w[jgertbrvw wvwe vweevnvpernwrpqncw[efvw[vw\nw\nw",
+            "character": "w\nw\nw\nw",
+            "theme": "ckfkfkffkfkfkfkfkfkfkf"
+          },
+          {
+            "id": "44de4834-cea1-4808-8cbd-3e0854b708b4",
+            "title": "Thank you for your",
+            "kind": "milestone",
+            "children": [],
+            "plot": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "subplot": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "character": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.",
+            "theme": "Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing."
+          }
+        ],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "ac7d2971-56ce-4f5e-8224-d62a8a724c5f",
+        "title": "Car crash",
+        "kind": "milestone",
+        "children": [],
+        "plot": "\n\ndriver is not paying attention",
+        "subplot": "",
+        "character": "protagonist is in shock",
+        "theme": ""
+      }
+    ],
+    "plot": "",
+    "subplot": "",
+    "character": "",
+    "theme": ""
+  },
+  {
+    "id": "ed5f114a-cd63-48b4-81a4-510079b1dcf6",
+    "title": "Middle",
+    "kind": "beat",
+    "children": [
+      {
+        "id": "66fc3ae7-083d-40d7-b9f0-028669fce2b7",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "53781f7a-419c-4a72-afe1-f897a29df06a",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "ddbe53de-d813-4cd9-b83d-ebb3d1c06665",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "17388429-45bd-4d21-8571-5c964e463f16",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [
+          {
+            "id": "80d0535f-b8c6-4278-b12c-c21d86fcaa8d",
+            "title": "efewgav",
+            "kind": "milestone",
+            "children": [],
+            "plot": "",
+            "subplot": "",
+            "character": "",
+            "theme": ""
+          },
+          {
+            "id": "4e0ce4ef-d12e-497e-8c44-a7bc1566c59b",
+            "title": "wngwbete",
+            "kind": "milestone",
+            "children": [],
+            "plot": "etagw",
+            "subplot": "nrwhbebe",
+            "character": "wnwbe",
+            "theme": "rwrhewh"
+          }
+        ],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "23fe1363-4072-4370-b912-a1750ebd44d9",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "66be4da3-fc9d-4115-8f9b-bc369753a634",
+        "title": "New Chapter",
         "kind": "chapter",
         "children": [],
         "plot": "",
@@ -43,163 +194,86 @@
     "theme": ""
   },
   {
-    "id": "0f63265b-0c5b-4247-be3f-bf6e851bf523",
->>>>>>> 902ffbd (Lint fix)
-    "title": "Middle",
-    "kind": "beat",
-    "children": [
-      {
-<<<<<<< HEAD
-        "id": "bf57c69f-a9bd-483a-b7b2-7aa5a70bd306",
-        "title": "expand me",
-        "kind": "chapter",
-        "children": []
-      }
-    ]
-  },
-  {
-    "id": "3f0f2f81-2e4b-40d4-bfa7-3d156ed1240c",
-=======
-        "id": "535f2332-2f7e-47b1-9d7e-b37dc56e4be8",
-        "title": "New Chapter",
-        "kind": "chapter",
-        "children": [
-          {
-            "id": "8988b39d-bc38-40bb-8fc4-d567b7f045eb",
-            "title": "vaee",
-            "kind": "milestone",
-            "children": [],
-            "plot": "aeeqfabe",
-            "subplot": "begesg",
-            "character": "hsetews",
-            "theme": "esergeagwa"
-          }
-        ],
-        "plot": "",
-        "subplot": "",
-        "character": "",
-        "theme": ""
-      }
-    ],
-    "plot": "",
-    "subplot": "",
-    "character": "",
-    "theme": ""
-  },
-  {
-    "id": "d459b300-6d99-4369-91c5-f810b5c99b0a",
->>>>>>> 902ffbd (Lint fix)
+    "id": "984dff02-3606-4362-89dd-692e16520e76",
     "title": "End",
     "kind": "beat",
     "children": [
       {
-<<<<<<< HEAD
-        "id": "f7409bef-d800-4ba2-a7bc-1e3f938bc5ff",
-        "title": "new child",
+        "id": "e45bef67-25f5-4fc5-ad7f-e443ffe6c973",
+        "title": "New Chapter",
         "kind": "chapter",
-        "children": [
-          {
-            "id": "4fd012f8-c888-4a08-9879-10a5b14f8575",
-            "title": "rename this milestone",
-            "kind": "milestone",
-            "children": []
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "8a273d95-0da1-4f10-b5c6-cb6130bb0e12",
-    "title": "the new beat",
-    "kind": "beat",
-    "children": [
-      {
-        "id": "1e872eb6-1b31-48da-afd6-6373dd7ccdb0",
-        "title": "rename this chapter",
-        "kind": "chapter",
-        "children": [
-          {
-            "id": "3e9981f9-dc9a-4e13-b4a9-5c033aadea5e",
-            "title": "rename this node",
-            "kind": "milestone",
-            "children": []
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "0a34175a-5d21-443a-9b64-353833a88bcc",
-    "title": "the last chapter",
-    "kind": "chapter",
-    "children": [
-      {
-        "id": "98674240-d14d-4928-98da-fd56206b63d6",
-        "title": "sibling 1",
-        "kind": "chapter",
-        "children": []
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
       },
       {
-        "id": "30eb2236-e4f2-4f17-8c98-baebb1fd99ed",
-        "title": "next child",
+        "id": "e20f7427-554f-4358-816b-12f2088116ea",
+        "title": "New Chapter",
         "kind": "chapter",
-        "children": [
-          {
-            "id": "cdf47a42-5144-4b02-aa11-78b6abd1efc7",
-            "title": "the last milestone of all",
-            "kind": "milestone",
-            "children": []
-          },
-          {
-            "id": "75de4de4-484b-4581-87ed-a821d2023c3e",
-            "title": "last milestone ever",
-            "kind": "milestone",
-            "children": []
-          }
-        ]
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
       },
       {
-        "id": "d85f3f60-3e0e-42e8-b9f2-33ecb68cfaa0",
-        "title": "sibling 2",
+        "id": "ea3968c7-c5ec-4abe-b564-e11d9790ebda",
+        "title": "New Chapter",
         "kind": "chapter",
         "children": [
           {
-            "id": "14cf9bf8-7041-4b50-b02f-6951ff56dd63",
-            "title": "mile 1",
-            "kind": "milestone",
-            "children": []
-          },
-          {
-            "id": "b99edebc-9970-4919-b03c-2229762355ef",
-            "title": "mile 2",
-            "kind": "milestone",
-            "children": []
-          },
-          {
-            "id": "891b0496-88c0-4496-8219-9f493d9234c4",
-            "title": "mile 3",
-            "kind": "milestone",
-            "children": []
-          }
-        ]
-      }
-    ]
-=======
-        "id": "a95da909-aad1-4ff4-9e31-0ce672689d3a",
-        "title": "fwvewbe",
-        "kind": "chapter",
-        "children": [
-          {
-            "id": "e2f220e8-036e-47e1-980c-cae3f2174d72",
-            "title": "esgesb",
+            "id": "942d3548-52d8-45c9-bf2b-fac3c6c44160",
+            "title": "wfwwf",
             "kind": "milestone",
             "children": [],
-            "plot": "egbhgwaseba",
+            "plot": "",
             "subplot": "",
-            "character": "egawebawg",
-            "theme": "esbwavebagbeag"
+            "character": "",
+            "theme": ""
           }
         ],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "baf638f9-e54a-4688-a1fa-b24d31cdd97f",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "ef058fd3-9a12-4962-9c89-e79bac8d8af2",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "1c74de22-8a65-4eb0-bbf0-63f0f597e262",
+        "title": "New Chapter",
+        "kind": "chapter",
+        "children": [],
+        "plot": "",
+        "subplot": "",
+        "character": "",
+        "theme": ""
+      },
+      {
+        "id": "578b91a9-83c3-4e3d-808d-356d942f3728",
+        "title": "wcqwvwavgqw",
+        "kind": "chapter",
+        "children": [],
         "plot": "",
         "subplot": "",
         "character": "",
@@ -210,16 +284,5 @@
     "subplot": "",
     "character": "",
     "theme": ""
-  },
-  {
-    "id": "8c414d22-814e-4643-a78f-6f304372386b",
-    "title": "New Beat",
-    "kind": "beat",
-    "children": [],
-    "plot": "",
-    "subplot": "",
-    "character": "",
-    "theme": ""
->>>>>>> 902ffbd (Lint fix)
   }
 ]
