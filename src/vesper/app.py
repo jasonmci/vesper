@@ -120,13 +120,13 @@ class VesperApp(App):
             self.notify(f"Project set to {root}")
         except Exception as e:
             self.notify(f"Set Project failed: {e}", severity="error")
-        try:
-            # tell Outliner to reload from the chosen project folder
-            self.query_one(OutlinerView).reload_outline_from_disk()
-            # and refresh the Board as well
-            self.query_one(BoardView).action_refresh()
-        except Exception:
-            pass
+        # Safely notify views without raising if they are missing
+        outliner = next(iter(self.query(OutlinerView)), None)
+        if outliner:
+            outliner.reload_outline_from_disk()
+        board = next(iter(self.query(BoardView)), None)
+        if board:
+            board.action_refresh()
 
     def action_new_file(self) -> None:
         self.editor().new_file()

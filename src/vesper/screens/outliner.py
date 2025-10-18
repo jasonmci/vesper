@@ -188,11 +188,9 @@ class OutlinerView(Container):
 
         # Build focus cycle: tree -> grid -> tabbed menu
         focusables = [self._tree, self._grid]
-        try:
-            menu = self.app.query_one(TabbedContent)
+        menu = next(iter(self.app.query(TabbedContent)), None)
+        if menu:
             focusables.append(menu)
-        except Exception:
-            pass
 
         # Find current index
         idx = 0
@@ -205,14 +203,17 @@ class OutlinerView(Container):
             next_idx = (idx - 1) % len(focusables)
         else:
             next_idx = (idx + 1) % len(focusables)
-        try:
-            focusables[next_idx].focus()
-        except Exception:
-            # fallback to tree on any error
+        target = focusables[next_idx]
+        focus = getattr(target, "focus", None)
+        if callable(focus):
             try:
+                focus()
+            except Exception as e:
+                if hasattr(self.app, "log"):
+                    self.app.log(f"Outliner: focus change failed: {e}")
                 self._tree.focus()
-            except Exception:
-                pass
+        else:
+            self._tree.focus()
         return
 
     def reload_outline_from_disk(self) -> None:
@@ -244,19 +245,15 @@ class OutlinerView(Container):
             return
 
         # Safety: don't allow deleting the last top-level node (would empty outline)
-        try:
-            root = self._tree.root
-            is_top_level = node.parent is root
-            top_level_count = len(list(root.children))
-            if is_top_level and top_level_count <= 1:
-                self.app.notify(
-                    "Can't delete the last item in the outline",
-                    severity="warning",
-                )
-                return
-        except Exception:
-            # if check fails for any reason, continue with deletion
-            pass
+        root = self._tree.root
+        is_top_level = node.parent is root
+        top_level_count = len(list(root.children))
+        if is_top_level and top_level_count <= 1:
+            self.app.notify(
+                "Can't delete the last item in the outline",
+                severity="warning",
+            )
+            return
 
         node.remove()
         self._save_outline()
@@ -513,7 +510,8 @@ class OutlinerView(Container):
         return node
 
     def _clone_subtree(self, node: TreeNode[OutlineItem]) -> OutlineItem:
-        assert node.data is not None
+        if node.data is None:
+            raise ValueError("_clone_subtree expected node.data to be present")
         d = node.data
         return OutlineItem(
             id=d.id,
@@ -594,7 +592,8 @@ class OutlinerView(Container):
 
     def _save_outline(self) -> None:
         def node_to_item(node: TreeNode[OutlineItem]) -> OutlineItem:
-            assert node.data is not None, "Expected node to have OutlineItem data"
+            if node.data is None:
+                raise ValueError("Expected node to have OutlineItem data")
             d: OutlineItem = node.data
             return OutlineItem(
                 id=d.id,
@@ -613,13 +612,13 @@ class OutlinerView(Container):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         # Refresh board view if present so it reflects latest outline
-        try:
-            board = self.app.query_one(BoardView)
-            refresh = getattr(board, "action_refresh", None)
-            if callable(refresh):
-                refresh()
-        except Exception:
-            pass
+        board = next(iter(self.app.query(BoardView)), None)
+        if board and callable(getattr(board, "action_refresh", None)):
+            try:
+                board.action_refresh()
+            except Exception as e:
+                if hasattr(self.app, "log"):
+                    self.app.log(f"Outliner: board refresh failed: {e}")
 
     def _load_outline(self) -> Optional[List[OutlineItem]]:
         path = self._outline_path()
@@ -724,10 +723,15 @@ class OutlinerView(Container):
             scroll_to_row(idx)
         try:
             from textual.coordinate import Coordinate
-
+        except Exception as e:
+            if hasattr(self.app, "log"):
+                self.app.log(f"Outliner: Coordinate import failed: {e}")
+            return
+        try:
             self._grid.cursor_coordinate = Coordinate(idx, 0)
-        except Exception:
-            pass
+        except Exception as e:
+            if hasattr(self.app, "log"):
+                self.app.log(f"Outliner: setting grid cursor failed: {e}")
 
     # Tree -> Grid
     def on_tree_node_selected(self, event) -> None:

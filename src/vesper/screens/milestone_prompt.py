@@ -66,14 +66,12 @@ class MilestonePrompt(ModalScreen[Optional[Dict[str, str]]]):
         # Enable wrapping on TextAreas where supported by your Textual version
         for field_id in ("#ms-plot", "#ms-subplot", "#ms-character", "#ms-theme"):
             ta = self.query_one(field_id, TextArea)
-            # Some Textual versions expose .wrap, others .soft_wrap; try both safely
-            try:
-                if hasattr(ta, "wrap"):
-                    setattr(ta, "wrap", True)
-                elif hasattr(ta, "soft_wrap"):
-                    setattr(ta, "soft_wrap", True)
-            except Exception:
-                pass
+            # Some Textual versions expose .wrap, others .soft_wrap; prefer
+            # capability checks
+            if hasattr(ta, "wrap"):
+                setattr(ta, "wrap", True)
+            elif hasattr(ta, "soft_wrap"):
+                setattr(ta, "soft_wrap", True)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(self._collect() if event.button.id == "ok" else None)
