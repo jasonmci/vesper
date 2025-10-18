@@ -90,6 +90,45 @@ Use the appropriate fix:
 2. Branch from main: `git switch -c feature/xyz`
 3. Rebase to catch up: `git rebase origin/main`
 4. Push safely: `git push` (or `--force-with-lease` after rebase)
+
+## Project-only commits from the app
+
+Vesper can stage, commit, push, and open a PR for only the files inside your current project (e.g., `projects/my-book`). This keeps unrelated content out of a writing commit.
+
+What the in-app "Commit Project" does:
+
+- Pre-syncs `main` safely
+   - If `origin` exists, it fetches and then fast-forwards local `main` from `origin/main`.
+   - If fast-forward is not possible, it stops and asks you to resolve manually (e.g., `git pull --rebase`), keeping `main` clean.
+- Creates a timestamped branch
+   - New branch named `vesper/<project-label>/YYYY-MM-DD-hh-mm-ss` off `main`.
+- Stages only your project
+   - `git add -A -- <project-path>` so only files under your current project (including `.md` and `.json`) are included.
+- Generates a helpful commit message
+   - Imperative subject per https://cbea.ms/git-commit/
+   - Body includes total diff stats, added/edited markdown headings, outline title changes, and a short file list.
+- Commits and pushes the branch
+   - Pushes to `origin` and sets upstream.
+- Creates a GitHub PR (if `gh` is installed)
+   - Opens a PR targeting `main` using the generated subject/body.
+   - Attempts to enable auto-merge (squash) if allowed by repo settings.
+
+Troubleshooting:
+
+- "Could not fast-forward 'main'" → Switch to `main` and run `git pull --rebase` (or follow the “Fixing the non-fast-forward” section above), then retry the commit.
+- PR creation requires the GitHub CLI (`gh`) and auth (`gh auth login`). If unavailable, the app still commits and pushes; open a PR manually from GitHub.
+
+## Optional: LLM-generated commit messages (future)
+
+The app supports a high-quality local message today. We may add an optional LLM provider to elevate commit messages further. Proposed approach:
+
+- Toggle via a setting (e.g., `~/.vesper/settings.json`) or env vars.
+- Providers: OpenAI (ChatGPT) or GitHub Copilot (if an API is available for commits).
+- Inputs: project-scoped diff summary, markdown headings, outline changes.
+- Output: subject (imperative) + body per cbea.ms, with a strict length cap.
+- Privacy & safety: send only what’s needed (no secrets), fall back to local message on errors/timeouts.
+
+Until then, the built-in message is deterministic, readable, and purpose-built for writing.
 # Contributing to Vesper
 
 Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.

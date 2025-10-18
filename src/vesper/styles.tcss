@@ -24,6 +24,15 @@ TabbedContent {
   align: center top;          /* centers fixed-width children horizontally */
 }
 
+#editor-container {
+  height: 1fr;
+  layout: horizontal;
+}
+
+#editor-left-spacer {
+  width: 1fr;                 /* balances right sidebar when visible */
+}
+
 #editor-wrapper {
   width: 88;                  /* fixed 88-char column */
   height: 1fr;
@@ -51,6 +60,18 @@ TextArea .text-area--line-number {
   text-align: center;
   color: $text-muted;
   padding: 0 1;
+}
+
+#editor-sidebar {
+  width: 42;                  /* right panel width */
+  height: 1fr;
+  layout: vertical;
+}
+
+.panel-title {
+  text-style: bold;
+  color: $accent;
+  height: 1;
 }
 
 /* =========================

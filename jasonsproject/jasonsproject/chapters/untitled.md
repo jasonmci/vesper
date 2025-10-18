@@ -1,3 +1,0 @@
-# Welcome to Vesper Editor
-
-Start typing your content here...

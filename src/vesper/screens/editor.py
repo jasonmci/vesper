@@ -1,12 +1,17 @@
 # src/vesper/editor.py
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Optional
 
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Static, TextArea
+
+from vesper.components.file_list import FileListView
+from vesper.components.quick_open_panel import QuickOpenPanel
+from vesper.services.paths import preferred_content_dir
 
 
 class EditorView(Container):
@@ -14,23 +19,41 @@ class EditorView(Container):
 
     current_path: Optional[Path] = None
     dirty: bool = False
+    _last_edit_ts: float = 0.0
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="editor-wrapper"):
-            yield TextArea(
-                text="# Welcome to Vesper Editor\n\nStart typing your content here...",
-                language="markdown",
-                theme="monokai",
-                show_line_numbers=True,
-                id="editor-textarea",
-            )
-            yield Static("", id="editor-status")  # words/lines/chars
+        with Horizontal(id="editor-container"):
+            # left spacer to keep center column centered when right panels show
+            yield Vertical(id="editor-left-spacer")
+            with Vertical(id="editor-wrapper"):
+                yield TextArea(
+                    text=(
+                        "# Welcome to Vesper Editor\n\n"
+                        "Start typing your content here..."
+                    ),
+                    language="markdown",
+                    theme="monokai",
+                    show_line_numbers=True,
+                    id="editor-textarea",
+                )
+                yield Static("", id="editor-status")  # words/lines/chars
+            # Right sidebar hosts Files + Quick Open panels
+            yield Vertical(id="editor-sidebar")
+            # right spacer used when sidebar is hidden to center the editor
+            yield Vertical(id="editor-right-spacer")
 
     def on_mount(self) -> None:
         ta = self.query_one(TextArea)
         ta.focus()
         self._update_counts()
         self._update_app_title()
+        # hide sidebar initially; show both spacers to center editor
+        sb = self.query_one("#editor-sidebar", Vertical)
+        sb.display = False
+        ls = self.query_one("#editor-left-spacer", Vertical)
+        rs = self.query_one("#editor-right-spacer", Vertical)
+        ls.display = True
+        rs.display = True
 
     # ---- Editing feedback -------------------------------------------------
 
@@ -39,6 +62,7 @@ class EditorView(Container):
             self.dirty = True
             self._update_app_title()
         self._update_counts()
+        self._last_edit_ts = time.time()
 
     def _update_counts(self) -> None:
         ta = self.query_one(TextArea)
@@ -85,3 +109,37 @@ class EditorView(Container):
         if mark_clean:
             self.dirty = False
         self._update_app_title()
+
+    # ---- Autosave support ----------------------------------------------
+
+    def should_autosave(self, idle_seconds: float = 15.0) -> bool:
+        """Return True if the buffer is dirty and has been idle >= idle_seconds."""
+        if not self.dirty:
+            return False
+        if self._last_edit_ts == 0:
+            return False
+        return (time.time() - self._last_edit_ts) >= idle_seconds
+
+    # ---- Sidebar ---------------------------------------------------------
+
+    def toggle_file_list(self) -> None:
+        sb = self.query_one("#editor-sidebar", Vertical)
+        ls = self.query_one("#editor-left-spacer", Vertical)
+        rs = self.query_one("#editor-right-spacer", Vertical)
+        if sb.display:
+            # hide and clear
+            sb.display = False
+            # show both spacers to center editor
+            ls.display = True
+            rs.display = True
+            sb.remove_children()
+            return
+        # show and populate
+        base = preferred_content_dir(getattr(self.app, "project_root", None))
+        sb.display = True
+        ls.display = True
+        rs.display = False
+        sb.remove_children()
+        # mount Files and Quick Open panel stacked
+        sb.mount(FileListView(base, id="file-list-view"))
+        sb.mount(QuickOpenPanel(base, id="quick-open-panel"))
