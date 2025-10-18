@@ -9,8 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import DataTable, Static, Tree
+from textual.widgets import DataTable, Static, TabbedContent, Tree
 from textual.widgets.tree import TreeNode
+
+from vesper.screens.board import BoardView  # absolute import to satisfy resolver
 
 from . import MilestonePrompt, PathPrompt  # reuse your small input modal
 
@@ -74,8 +76,9 @@ class OutlinerView(Container):
         Binding("c", "add_child", "Add Child"),
         Binding("enter", "rename", "Rename"),
         Binding("backspace", "delete", "Delete"),
-        Binding("tab", "indent", "Indent"),
-        Binding("shift+tab", "outdent", "Outdent"),
+        # Use [ and ] for indent/outdent to free Tab for focus cycling
+        Binding("]", "indent", "Indent"),
+        Binding("[", "outdent", "Outdent"),
         Binding("ctrl+shift+up", "move_up", "Move Up"),
         Binding("ctrl+k", "move_up", "Move Up"),  # fallback
         Binding("ctrl+shift+down", "move_down", "Move Down"),
@@ -98,7 +101,8 @@ class OutlinerView(Container):
                 yield Static(
                     (
                         "A: Sibling  C: Child  Enter: Rename  ⌫: Delete  "
-                        "Tab/Shift+Tab: Indent/Outdent  J/K: Move  E: Expand"
+                        "]/[ : Indent/Outdent  Tab/Shift+Tab: Focus Cycle  "
+                        "J/K: Move  E: Expand"
                     ),
                     id="outliner-help",
                 )
@@ -159,6 +163,58 @@ class OutlinerView(Container):
         self._expand_all()
         self._tree.focus()
 
+    def on_key(self, event) -> None:
+        """Use Tab/Shift+Tab to move focus between tree, grid, and tab menu.
+
+        Indent/outdent are now [ and ] to avoid interfering with Tab focus.
+        """
+        key = getattr(event, "key", None) or getattr(event, "name", None)
+        aliases = set(getattr(event, "aliases", []) or [])
+        is_tab = (key == "tab") or ("tab" in aliases)
+        if not is_tab:
+            return
+
+        is_shift = bool(getattr(event, "shift", False)) or any(
+            a.startswith("shift+") for a in aliases
+        )
+
+        # Prevent default focus traversal; we manage it
+        stop = getattr(event, "stop", None)
+        if callable(stop):
+            stop()
+        prevent = getattr(event, "prevent_default", None)
+        if callable(prevent):
+            prevent()
+
+        # Build focus cycle: tree -> grid -> tabbed menu
+        focusables = [self._tree, self._grid]
+        try:
+            menu = self.app.query_one(TabbedContent)
+            focusables.append(menu)
+        except Exception:
+            pass
+
+        # Find current index
+        idx = 0
+        for i, w in enumerate(focusables):
+            if bool(getattr(w, "has_focus", False)):
+                idx = i
+                break
+
+        if is_shift:
+            next_idx = (idx - 1) % len(focusables)
+        else:
+            next_idx = (idx + 1) % len(focusables)
+        try:
+            focusables[next_idx].focus()
+        except Exception:
+            # fallback to tree on any error
+            try:
+                self._tree.focus()
+            except Exception:
+                pass
+        return
+
     def reload_outline_from_disk(self) -> None:
         items = self._load_outline() or self._seed_bme()
         self._populate_tree(items)
@@ -184,10 +240,27 @@ class OutlinerView(Container):
 
     def action_delete(self) -> None:
         node = self._selected_node()
-        if node and node.parent:
-            node.remove()
-            self._save_outline()
-            self._rebuild_grid()
+        if not node or not node.parent:
+            return
+
+        # Safety: don't allow deleting the last top-level node (would empty outline)
+        try:
+            root = self._tree.root
+            is_top_level = node.parent is root
+            top_level_count = len(list(root.children))
+            if is_top_level and top_level_count <= 1:
+                self.app.notify(
+                    "Can't delete the last item in the outline",
+                    severity="warning",
+                )
+                return
+        except Exception:
+            # if check fails for any reason, continue with deletion
+            pass
+
+        node.remove()
+        self._save_outline()
+        self._rebuild_grid()
 
     def action_indent(self) -> None:
         node = self._selected_node()
@@ -539,6 +612,14 @@ class OutlinerView(Container):
         path = self._outline_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        # Refresh board view if present so it reflects latest outline
+        try:
+            board = self.app.query_one(BoardView)
+            refresh = getattr(board, "action_refresh", None)
+            if callable(refresh):
+                refresh()
+        except Exception:
+            pass
 
     def _load_outline(self) -> Optional[List[OutlineItem]]:
         path = self._outline_path()
