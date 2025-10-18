@@ -1,3 +1,95 @@
+# Contributing (Solo workflow cheatsheet)
+
+This project uses a simple, low-drama Git workflow designed for a solo developer—and it plays nicely with Dependabot PRs and GitHub merges.
+
+## Golden rules
+
+- Never commit directly to `main` (treat it as protected).
+- Always create a feature branch off an up-to-date `main`.
+- Prefer rebase over merge to keep history linear.
+- Use `--force-with-lease` only on your own feature branches (never on `main`).
+
+## One-time helpful defaults
+
+Configure these once to reduce surprises:
+
+```sh
+git config --global pull.rebase true       # pull uses rebase instead of merge
+git config --global pull.ff only           # fail if pull can't fast-forward
+git config --global rebase.autoStash true  # stash/unstash automatically for rebase
+git config --global push.default current   # push current branch to same name
+```
+
+## Create a feature branch
+
+```sh
+git fetch origin
+git switch main
+git pull --ff-only              # ensure local main is exactly origin/main
+git switch -c feature/xyz       # create your branch from current main
+```
+
+## Keep your branch up to date
+
+Rebase your branch on the latest `origin/main` periodically:
+
+```sh
+git fetch origin
+git rebase origin/main
+```
+
+If you have already pushed your branch and then rebased locally, update the remote branch with:
+
+```sh
+git push --force-with-lease
+```
+
+## Open a PR and merge
+
+- Push your branch: `git push -u origin feature/xyz`
+- Open a PR on GitHub. Prefer "Squash and merge" or "Rebase and merge" to keep main linear.
+- After merge, delete the branch on GitHub and locally.
+
+## Update local main after merges (including Dependabot)
+
+Dependabot or GitHub merges advance `origin/main`. Update your local `main` with fast-forward only:
+
+```sh
+git fetch origin
+git switch main
+git pull --ff-only
+```
+
+## Fixing the non-fast-forward push error
+
+If you see:
+
+```
+error: failed to push some refs
+hint: Updates were rejected because the tip of your current branch is behind
+```
+
+Use the appropriate fix:
+
+- If you did NOT rebase/amend locally (remote just moved ahead):
+
+  ```sh
+  git pull --rebase
+  git push
+  ```
+
+- If you DID rebase or amend locally after pushing (your history changed):
+
+  ```sh
+  git push --force-with-lease
+  ```
+
+## Quick recap
+
+1. `main` stays clean: `git pull --ff-only`
+2. Branch from main: `git switch -c feature/xyz`
+3. Rebase to catch up: `git rebase origin/main`
+4. Push safely: `git push` (or `--force-with-lease` after rebase)
 # Contributing to Vesper
 
 Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.

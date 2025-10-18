@@ -8,6 +8,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Footer, Header, TabbedContent, TabPane
 
+from vesper.screens.board import BoardView
 from vesper.screens.editor import EditorView
 from vesper.screens.outliner import OutlinerView
 from vesper.screens.stats import StatsView
@@ -68,6 +69,8 @@ class VesperApp(App):
                 yield TasksView()
             with TabPane("Stats", id="stats"):
                 yield StatsView()
+            with TabPane("Board", id="board"):
+                yield BoardView()
         yield Footer(show_command_palette=True)
 
     def on_mount(self) -> None:
@@ -120,6 +123,8 @@ class VesperApp(App):
         try:
             # tell Outliner to reload from the chosen project folder
             self.query_one(OutlinerView).reload_outline_from_disk()
+            # and refresh the Board as well
+            self.query_one(BoardView).action_refresh()
         except Exception:
             pass
 
