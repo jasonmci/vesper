@@ -160,11 +160,18 @@ class BoardView(Vertical):
             # add a thin separator row after each milestone block
             self._grid.add_row(*_sep_row_cells())
 
-        # Position cursor at the top
+        # Position cursor at the top (best-effort)
         try:
             from textual.coordinate import Coordinate
+        except Exception as e:
+            # Older/newer Textual versions may differ; log and continue
+            if hasattr(self, "app") and hasattr(self.app, "log"):
+                self.app.log(f"BoardView: Coordinate import failed: {e}")
+            return
 
-            if self._grid.row_count:
+        if getattr(self._grid, "row_count", 0):
+            try:
                 self._grid.cursor_coordinate = Coordinate(0, 0)
-        except Exception:
-            pass
+            except Exception as e:
+                if hasattr(self, "app") and hasattr(self.app, "log"):
+                    self.app.log(f"BoardView: setting cursor failed: {e}")
