@@ -78,10 +78,15 @@ class MilestonePrompt(ModalScreen[Optional[Dict[str, str]]]):
 
     def on_key(self, event) -> None:
         # Esc cancels; Ctrl/Cmd+Enter confirms from any field
-        if event.key == "escape":
+        if getattr(event, "key", None) == "escape":
             self.dismiss(None)
-        if event.key == "enter" and (event.ctrl or getattr(event, "meta", False)):
-            self.dismiss(self._collect())
+        key = getattr(event, "key", None) or getattr(event, "name", None)
+        if key == "enter":
+            ctrl = bool(getattr(event, "ctrl", False))
+            meta = bool(getattr(event, "meta", False))
+            aliases = set(getattr(event, "aliases", []) or [])
+            if ctrl or meta or ("ctrl+m" in aliases):
+                self.dismiss(self._collect())
 
     def _collect(self) -> Dict[str, str]:
         return {
