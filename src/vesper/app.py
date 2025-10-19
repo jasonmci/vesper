@@ -85,6 +85,7 @@ class VesperApp(App):
         Binding("ctrl+shift+n", "new_project_file", "New File in Project"),
         Binding("ctrl+b", "toggle_file_list", "Files"),
         Binding("ctrl+shift+g", "commit_project", "Commit All"),
+        Binding("ctrl+shift+y", "sync_main_cleanup", "Sync Main & Cleanup"),
         Binding("ctrl+shift+r", "set_projects_root", "Set Projects Root"),
         Binding("ctrl+shift+j", "choose_project", "Choose Project"),
         Binding("ctrl+shift+l", "configure_llm", "LLM Settings"),
@@ -119,12 +120,12 @@ class VesperApp(App):
                 yield EditorView(id="editor-view")
             with TabPane("Outliner", id="outliner"):
                 yield OutlinerView()
+            with TabPane("Board", id="board"):
+                yield BoardView()
             with TabPane("Tasks", id="tasks"):
                 yield TasksView()
             with TabPane("Stats", id="stats"):
                 yield StatsView()
-            with TabPane("Board", id="board"):
-                yield BoardView()
         yield Footer(show_command_palette=True)
 
     def on_mount(self) -> None:
@@ -400,6 +401,35 @@ class VesperApp(App):
             self.notify(res["message"], severity=sev)  # type: ignore[arg-type]
         except Exception as e:
             self.notify(f"Commit failed: {e}", severity="error")
+
+    # ---- Git sync & cleanup -------------------------------------------
+
+    def action_sync_main_cleanup(self) -> None:
+        self.run_worker(self._sync_main_cleanup_worker())
+
+    async def _sync_main_cleanup_worker(self) -> None:
+        try:
+            from vesper.services.git import sync_main_and_cleanup
+
+            settings = _load_settings()
+            projects_root = settings.get("projects_root")
+            if projects_root:
+                candidate = Path(projects_root).expanduser()
+                repo_root = candidate if candidate.exists() else Path.cwd()
+            else:
+                repo_root = self.project_root if self.project_root else Path.cwd()
+
+            # Default branch from settings if available
+            branch = settings.get("last_branch")
+            res = sync_main_and_cleanup(repo_root, branch=branch, delete_remote=True)
+            sev = res.get("severity", "information")
+            # type: ignore[arg-type] for textual notify
+            self.notify(
+                res.get("message", "Sync complete."),
+                severity=sev,
+            )  # type: ignore[arg-type]
+        except Exception as e:
+            self.notify(f"Sync failed: {e}", severity="error")
 
     # ---- LLM Settings ---------------------------------------------------
 

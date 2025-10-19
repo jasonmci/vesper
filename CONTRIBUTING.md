@@ -91,44 +91,101 @@ Use the appropriate fix:
 3. Rebase to catch up: `git rebase origin/main`
 4. Push safely: `git push` (or `--force-with-lease` after rebase)
 
-## Project-only commits from the app
+## Commit All + PR from the app
 
-Vesper can stage, commit, push, and open a PR for only the files inside your current project (e.g., `projects/my-book`). This keeps unrelated content out of a writing commit.
+Vesper can stage, commit, push, and open a PR for all changes in the repository (a "flush" commit). Use the in-app shortcut:
 
-What the in-app "Commit Project" does:
+- Commit All: press `Ctrl+Shift+G`
+
+What the in-app Commit All does:
 
 - Pre-syncs `main` safely
-   - If `origin` exists, it fetches and then fast-forwards local `main` from `origin/main`.
-   - If fast-forward is not possible, it stops and asks you to resolve manually (e.g., `git pull --rebase`), keeping `main` clean.
+   - If `origin` exists, it fetches and attempts to fast-forward local `main` from `origin/main`.
+   - If fast-forward is not possible, it stops and asks you to resolve manually (e.g., `git pull --rebase`), keeping `main` clean and linear.
 - Creates a timestamped branch
-   - New branch named `vesper/<project-label>/YYYY-MM-DD-hh-mm-ss` off `main`.
-- Stages only your project
-   - `git add -A -- <project-path>` so only files under your current project (including `.md` and `.json`) are included.
+   - New branch named `vesper/YYYY-MM-DD-hh-mm-ss` (or `vesper/<scope>/...` when scoped) off `main`.
+- Stages all changes
+   - Uses `git add -A` to include tracked and untracked changes across the repo.
 - Generates a helpful commit message
    - Imperative subject per https://cbea.ms/git-commit/
    - Body includes total diff stats, added/edited markdown headings, outline title changes, and a short file list.
+   - Optionally refines the message with an LLM (see “LLM commit messages” below).
 - Commits and pushes the branch
    - Pushes to `origin` and sets upstream.
-- Creates a GitHub PR (if `gh` is installed)
+- Creates a GitHub PR (if `gh` is installed and authed)
    - Opens a PR targeting `main` using the generated subject/body.
-   - Attempts to enable auto-merge (squash) if allowed by repo settings.
+   - Auto-merge is optional; controlled by a setting (default disabled).
+   - Saves the branch name to settings as `last_branch` for later cleanup.
 
 Troubleshooting:
 
-- "Could not fast-forward 'main'" → Switch to `main` and run `git pull --rebase` (or follow the “Fixing the non-fast-forward” section above), then retry the commit.
-- PR creation requires the GitHub CLI (`gh`) and auth (`gh auth login`). If unavailable, the app still commits and pushes; open a PR manually from GitHub.
+- "Could not fast-forward 'main'" → Switch to `main` and run:
 
-## Optional: LLM-generated commit messages (future)
+   ```sh
+   git pull --rebase
+   ```
 
-The app supports a high-quality local message today. We may add an optional LLM provider to elevate commit messages further. Proposed approach:
+   Then retry the commit.
 
-- Toggle via a setting (e.g., `~/.vesper/settings.json`) or env vars.
-- Providers: OpenAI (ChatGPT) or GitHub Copilot (if an API is available for commits).
-- Inputs: project-scoped diff summary, markdown headings, outline changes.
-- Output: subject (imperative) + body per cbea.ms, with a strict length cap.
-- Privacy & safety: send only what’s needed (no secrets), fall back to local message on errors/timeouts.
+- PR creation requires the GitHub CLI (`gh`) and authentication. If unavailable, the app still commits and pushes; open a PR manually from GitHub.
 
-Until then, the built-in message is deterministic, readable, and purpose-built for writing.
+   ```sh
+   gh auth login
+   ```
+
+Logs: toast notifications are mirrored to `~/.vesper/vesper.log` to help diagnose issues.
+
+### LLM commit messages (optional)
+
+Commit messages are generated locally by default. To enable optional LLM refinement (OpenAI):
+
+- Press `Ctrl+Shift+L` in the app to open LLM settings, or edit `~/.vesper/settings.json`:
+
+```json
+{
+   "llm.enabled": true,
+   "llm.provider": "openai",
+   "openai.api_key": "sk-...",
+   "openai.model": "gpt-4o-mini",
+   "openai.max_tokens": 512,
+   "openai.timeout_secs": 12,
+   "openai.base_url": "https://api.openai.com/v1"
+}
+```
+
+Notes:
+
+- The prompt is editorial only and follows cbea.ms guidance. If the LLM call fails or is disabled, the app falls back to the local message.
+- API key is stored in `~/.vesper/settings.json`.
+
+### Optional PR auto-merge
+
+Control auto-merge behavior (off by default) via `~/.vesper/settings.json`:
+
+```json
+{
+   "gh.auto_merge": false
+}
+```
+
+When enabled and supported by repo permissions, the app attempts `gh pr merge --auto --squash` after PR creation.
+
+## Sync Main & Cleanup (post-PR)
+
+After your PR is merged on GitHub, you can sync `main` locally and clean up the merged branch right from the app:
+
+- Sync Main & Cleanup: press `Ctrl+Shift+Y`
+
+What it does:
+
+- Fast-forwards local `main` from `origin/main` (if available)
+- Determines the branch to remove using `last_branch` in settings (or you can pass one programmatically)
+- Verifies that the branch is already merged into `main`
+- Deletes the local branch, and optionally deletes the remote branch on `origin`
+
+If the branch isn’t merged yet, or isn’t found locally, it leaves a clear warning and does not delete anything.
+
+<!-- The previous "future" LLM section has been implemented; see LLM commit messages above. -->
 # Contributing to Vesper
 
 Thank you for your interest in contributing to Vesper! This document provides guidelines and instructions for contributing.
