@@ -50,9 +50,10 @@ if not _LOGGER.handlers:
         _LOGGER.setLevel(logging.INFO)
         _LOGGER.addHandler(_handler)
         _LOGGER.propagate = False
-    except Exception:
-        # If logging setup fails, continue without file logging.
-        pass
+    except Exception as e:
+        # Fall back to basic stderr logging; record why file logging is disabled.
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger("vesper").warning("File logging disabled: %s", str(e))
 
 
 def _ensure_project_skeleton(root: Path) -> None:
@@ -93,18 +94,14 @@ class VesperApp(App):
     def notify(self, message: str, *args, **kwargs) -> None:  # type: ignore[override]
         severity = kwargs.get("severity", "information")
         super().notify(message, *args, **kwargs)
-        try:
-            lvl = (
-                logging.ERROR
-                if severity == "error"
-                else logging.WARNING
-                if severity == "warning"
-                else logging.INFO
-            )
-            _LOGGER.log(lvl, message)
-        except Exception:
-            # Never fail UI on logging problems
-            pass
+        lvl = (
+            logging.ERROR
+            if severity == "error"
+            else logging.WARNING
+            if severity == "warning"
+            else logging.INFO
+        )
+        _LOGGER.log(lvl, message)
 
     def _resolve_path(self, path_str: str) -> Path:
         p = Path(path_str).expanduser()

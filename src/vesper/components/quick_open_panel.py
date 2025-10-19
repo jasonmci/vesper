@@ -84,5 +84,5 @@ class QuickOpenPanel(Vertical):
 
                 ed = self.app.query_one("#editor-view", EditorView)
                 ed.load_file(p)
-            except Exception:
-                pass
+            except Exception as e:
+                self.app.notify(f"Open failed: {e}", severity="warning")

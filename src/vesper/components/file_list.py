@@ -44,5 +44,6 @@ class FileListView(Vertical):
 
                 ed = self.app.query_one("#editor-view", EditorView)
                 ed.load_file(p)
-            except Exception:
-                pass
+            except Exception as e:
+                # Surface a warning toast so the user sees the failure
+                self.app.notify(f"Open failed: {e}", severity="warning")

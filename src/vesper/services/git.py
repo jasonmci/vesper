@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-import subprocess
+import subprocess  # nosec B404: using subprocess to call git/gh with fixed args
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -14,7 +14,7 @@ def _run(cmd: List[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         text=True,
         capture_output=True,
         check=False,
-    )
+    )  # nosec B603: shell=False and cmd arguments are controlled
 
 
 def _ensure_repo(root: Path) -> None:
