@@ -36,9 +36,6 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -e .
 
-    - name: Run pre-commit hooks
-      uses: pre-commit/action@v3.0.1
-
     - name: Run tests with pytest
       run: |
         pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
@@ -76,16 +73,10 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -e .
 
-    - name: Run linting checks
-      run: |
-        echo "Running flake8..."
-        flake8 src/ tests/
-        # echo "Running mypy..."
-        # mypy src/
-        echo "Running black check..."
-        black --check src/ tests/
-        echo "Running isort check..."
-        isort --check-only src/ tests/
+    - name: Run pre-commit (all files)
+      uses: pre-commit/action@v3.0.1
+      with:
+        extra_args: --all-files
 
   security:
     runs-on: ubuntu-latest
