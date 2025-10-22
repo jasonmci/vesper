@@ -391,7 +391,7 @@ def commit_project_changes(
     patch = _staged_patch(root, rel_scope)
     local_msg = _build_commit_message(status_after_add, project_label, numstat, patch)
     # Optionally enhance with LLM commit message
-    from .settings import load_settings  # local import to avoid cycles
+    from .settings import load_settings, save_settings  # local import to avoid cycles
 
     cfg = load_settings()
     llm_msg = _maybe_llm_commit_message(cfg, local_msg, project_label)
@@ -403,39 +403,153 @@ def commit_project_changes(
             "severity": "error",
         }
 
-    # Try to push if a remote exists
-    remotes = _run(["git", "remote"], root).stdout.split()
-    if remotes:
-        # Push the new branch and set upstream
-        push = _run(["git", "push", "-u", "origin", used_branch], root)
-        if push.returncode != 0:
-            # Surface as warning but keep commit
-            detail = push.stderr.strip() or push.stdout.strip()
-            return {
-                "message": f"Committed on '{used_branch}'. Push failed: {detail}",
-                "severity": "warning",
-            }
+    # Save last_branch for later cleanup
+    try:
+        cfg["last_branch"] = used_branch
+        save_settings(cfg)
+    except Exception:
+        # Non-fatal
+        pass
 
-        # Auto-create PR if GitHub CLI is available
-        if _gh_available(root):
-            subj, body = _split_subject_body(msg)
-            ok_pr, pr_info = _gh_create_pr(root, used_branch, subj, body)
-            if ok_pr:
-                # Try to enable auto-merge (squash)
+    # Push the new branch and set upstream
+    push = _run(["git", "push", "-u", "origin", used_branch], root)
+    if push.returncode != 0:
+        # Surface as warning but keep commit
+        detail = push.stderr.strip() or push.stdout.strip()
+        return {
+            "message": f"Committed on '{used_branch}'. Push failed: {detail}",
+            "severity": "warning",
+            "branch": used_branch,
+        }
+
+    # Auto-create PR if GitHub CLI is available
+    if _gh_available(root):
+        subj, body = _split_subject_body(msg)
+        ok_pr, pr_info = _gh_create_pr(root, used_branch, subj, body)
+        if ok_pr:
+            # Respect user setting for auto-merge (default disabled)
+            from .settings import load_settings as _load_settings  # local import
+
+            _cfg = _load_settings()
+            auto_merge = str(_cfg.get("gh.auto_merge", "false")).lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+            if auto_merge:
                 ok_am, _ = _gh_enable_auto_merge(root, pr_info)
                 auto = " and auto-merge enabled" if ok_am else ""
                 return {
                     "message": f"Committed, pushed, PR created at {pr_info}{auto}.",
+                    "branch": used_branch,
                 }
-            else:
-                return {
-                    "message": (
-                        f"Committed and pushed branch '{used_branch}'. "
-                        f"PR creation failed: {pr_info}"
-                    ),
-                    "severity": "warning",
-                }
+            # No auto-merge requested
+            return {
+                "message": f"Committed, pushed, PR created at {pr_info}.",
+                "branch": used_branch,
+            }
+        else:
+            return {
+                "message": (
+                    "Committed and pushed branch "
+                    f"'{used_branch}'. PR creation failed: {pr_info}"
+                ),
+                "severity": "warning",
+                "branch": used_branch,
+            }
 
+    # gh not available
     return {
-        "message": (f"Committed on '{used_branch}' (and pushed if remote configured).")
+        "message": f"Committed and pushed branch '{used_branch}'.",
+        "branch": used_branch,
     }
+
+
+def _current_branch(root: Path) -> str:
+    proc = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], root)
+    return proc.stdout.strip()
+
+
+def _branch_exists(root: Path, name: str) -> bool:
+    return (
+        _run(["git", "show-ref", "--verify", f"refs/heads/{name}"], root).returncode
+        == 0
+    )
+
+
+def _branch_merged_into_main(root: Path, name: str) -> bool:
+    proc = _run(["git", "branch", "--merged", "main"], root)
+    merged = [ln.strip().lstrip("* ") for ln in proc.stdout.splitlines()]
+    return name in merged
+
+
+def sync_main_and_cleanup(
+    repo_root: Path, branch: Optional[str] = None, delete_remote: bool = True
+) -> Dict[str, str]:
+    """Switch to main, fast-forward from origin, and delete a merged feature branch.
+
+    If branch is None, use last_branch from settings (if present).
+    Returns a status dict.
+    """
+    root = Path(repo_root)
+    # Ensure repo
+    _ensure_repo(root)
+    # Update main
+    ok_ff, detail = _ff_update_main(root)
+    if not ok_ff:
+        return {
+            "message": (
+                "Could not fast-forward 'main'. Pull/rebase manually: " f"{detail}"
+            ),
+            "severity": "warning",
+        }
+
+    # Resolve branch to clean
+    target = branch
+    if not target:
+        try:
+            from .settings import load_settings as _load_settings
+
+            _s = _load_settings()
+            target = _s.get("last_branch")
+        except Exception:
+            target = None
+
+    if not target:
+        return {"message": "Synced main. No branch specified to clean up."}
+
+    if not _branch_exists(root, target):
+        return {"message": f"Synced main. Branch '{target}' not found locally."}
+
+    if not _branch_merged_into_main(root, target):
+        return {
+            "message": (
+                f"Synced main. Branch '{target}' is not merged into main yet; "
+                "skipping deletion."
+            ),
+            "severity": "warning",
+        }
+
+    # Delete local branch
+    del_local = _run(["git", "branch", "-d", target], root)
+    if del_local.returncode != 0:
+        return {
+            "message": f"Synced main but failed to delete local '{target}': "
+            f"{del_local.stderr.strip() or del_local.stdout.strip()}",
+            "severity": "warning",
+        }
+
+    # Optionally delete remote branch
+    if delete_remote and _has_remote_origin(root):
+        del_remote = _run(["git", "push", "origin", "--delete", target], root)
+        if del_remote.returncode != 0:
+            detail_r = del_remote.stderr.strip() or del_remote.stdout.strip()
+            return {
+                "message": (
+                    "Synced main; deleted local "
+                    f"'{target}'. Remote delete failed: {detail_r}"
+                ),
+                "severity": "warning",
+            }
+
+    return {"message": f"Synced main; cleaned branch '{target}'."}
